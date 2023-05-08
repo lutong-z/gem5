@@ -397,7 +397,7 @@ class CPU : public BaseCPU
      */
     bool removeInstsThisCycle;
 
-  protected:
+  public:
     /** The fetch stage. */
     Fetch fetch;
 

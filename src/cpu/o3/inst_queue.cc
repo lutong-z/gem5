@@ -94,7 +94,7 @@ InstructionQueue::InstructionQueue(CPU *cpu_ptr, IEW *iew_ptr,
       numEntries(params.numIQEntries),
       totalWidth(params.issueWidth),
       commitToIEWDelay(params.commitToIEWDelay),
-      iqStats(cpu, totalWidth),
+      iqStats(cpu, totalWidth, params.numROBEntries),
       iqIOStats(cpu)
 {
     assert(fuPool);
@@ -176,7 +176,7 @@ InstructionQueue::name() const
     return cpu->name() + ".iq";
 }
 
-InstructionQueue::IQStats::IQStats(CPU *cpu, const unsigned &total_width)
+InstructionQueue::IQStats::IQStats(CPU *cpu, const unsigned &total_width, const unsigned &numROBEntries)
     : statistics::Group(cpu),
     ADD_STAT(instsAdded, statistics::units::Count::get(),
              "Number of instructions added to the IQ (excludes non-spec)"),
@@ -206,6 +206,8 @@ InstructionQueue::IQStats::IQStats(CPU *cpu, const unsigned &total_width)
              "Number of squashed non-spec instructions that were removed"),
     ADD_STAT(numIssuedDist, statistics::units::Count::get(),
              "Number of insts issued each cycle"),
+    ADD_STAT(issueRobIntervalDist, statistics::units::Count::get(),
+             "Distance between rob head and insts issued each cycle"),
     ADD_STAT(statFuBusy, statistics::units::Count::get(),
              "attempts to use FU when none available"),
     ADD_STAT(statIssuedInstType, statistics::units::Count::get(),
@@ -268,6 +270,11 @@ InstructionQueue::IQStats::IQStats(CPU *cpu, const unsigned &total_width)
         .init(0,total_width,1)
         .flags(statistics::pdf)
         ;
+
+    issueRobIntervalDist
+        .init(0,numROBEntries,1)
+        .flags(statistics::total | statistics::pdf)
+    ;
 /*
     dist_unissued
         .init(Num_OpClasses+2)
@@ -876,6 +883,13 @@ InstructionQueue::scheduleReadyInsts()
 
             issuing_inst->setIssued();
             ++total_issued;
+
+            // Record distance
+            InstSeqNum head_seqNum = cpu->commit.rob->readHeadInst(tid)->seqNum;
+            InstSeqNum cur_seqNum  = issuing_inst->seqNum;
+            uint64_t insn_distance = cur_seqNum - head_seqNum;
+            iqStats.issueRobIntervalDist.sample(insn_distance);
+
 
 #if TRACING_ON
             issuing_inst->issueTick = curTick() - issuing_inst->fetchTick;

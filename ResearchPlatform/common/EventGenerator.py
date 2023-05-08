@@ -49,10 +49,9 @@ def restore_simpoint_checkpoint(simulator : Simulator, simpoint_interval : int, 
         if not warmup_done : 
             print("**************** End simpoint warmup ****************\n")
             print("**************** Start simpoint simulation ***************\n")
-            simulator.schedule_max_insts(simpoint_interval-warmup_interval)
             warmup_done = True
-            dump()
             reset()
+            simulator.schedule_max_insts(simpoint_interval-warmup_interval)
             yield False
         else : 
             print("**************** End simpoint simulation ****************\n")

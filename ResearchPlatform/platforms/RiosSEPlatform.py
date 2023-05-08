@@ -34,8 +34,7 @@ class RiosSEPlatform(SimpleBoard) :
         
         # Three working mode : Normal, Take SimPoint, Restore SimPoint
         workload = CustomResource(args.cmd)
-        runtime_options = [args.options]
-        
+        runtime_options = args.options.split()
         if args.restore_simpoint_checkpoint: 
             if not args.checkpoint_dir :
                 fatal("Checkpoint dir path should be set")
