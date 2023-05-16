@@ -13,19 +13,25 @@ from gem5.simulate.simulator import Simulator
 from gem5.components.processors.cpu_types import CPUTypes
 from ResearchPlatform.common.RiosPlatformOptions import addSECommonOption,addSimpointOption
 from ResearchPlatform.common.EventGenerator import take_simpoint_checkpoints,restore_simpoint_checkpoint
-
+from argparse import ArgumentParser
 
 class RiosSEPlatform(SimpleBoard) : 
     def __init__(self, clk_freq: str, core: AbstractProcessor, 
                  memory: AbstractMemorySystem, cache_hierarchy: AbstractCacheHierarchy) -> None:
         super().__init__(clk_freq, core, memory, cache_hierarchy)
     
-    def parse_arguments(self) : 
+    def parse_arguments(self, additionalOption = None) : 
+
         parser = argparse.ArgumentParser(
             description= "Gem5-SE processor simulation platform of RIOSLab"
         )
+
         addSECommonOption(parser)       
         addSimpointOption(parser)
+
+        if additionalOption is not None : 
+            additionalOption(parser)
+        
         return parser.parse_args()
     
     def simulate(self,args) :
@@ -48,9 +54,7 @@ class RiosSEPlatform(SimpleBoard) :
                 checkpoint=checkpoint
             )
             if warmup_interval > 0 :
-                simulator._on_exit_event = {
-                    ExitEvent.MAX_INSTS : restore_simpoint_checkpoint(simulator,simpoint_interval,warmup_interval)
-                }
+                simulator._on_exit_event[ExitEvent.MAX_INSTS] = restore_simpoint_checkpoint(simulator,simpoint_interval,warmup_interval)
                 simulator.schedule_max_insts(warmup_interval)
                 print("**************** Start simpoint warmup ****************\n")
             else : 
@@ -82,9 +86,7 @@ class RiosSEPlatform(SimpleBoard) :
                 arguments=runtime_options,
                 simpoint=simpoint
             )
-            simulator._on_exit_event = {
-                ExitEvent.SIMPOINT_BEGIN : take_simpoint_checkpoints(simulator,simpoint,cptdir)
-            }
+            simulator._on_exit_event[ExitEvent.SIMPOINT_BEGIN] = take_simpoint_checkpoints(simulator,simpoint,cptdir)
         else:
             self.set_se_binary_workload(
                 binary=workload,

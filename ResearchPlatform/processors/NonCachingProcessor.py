@@ -4,7 +4,7 @@ from gem5.isas import ISA
 from gem5.components.cachehierarchies.classic.no_cache import NoCache
 from gem5.components.processors.simple_processor import SimpleProcessor
 from gem5.components.memory import SingleChannelDDR4_2400
-
+import argparse
 
 cache = NoCache()
 
@@ -17,6 +17,10 @@ core = SimpleProcessor(
 )
 
 platform = RiosSEPlatform(clk_freq="1GHz", core=core, memory=memory, cache_hierarchy=cache)
+
+parser = argparse.ArgumentParser(
+    description= "Gem5-SE processor simulation platform of RIOSLab"
+)
 
 args = platform.parse_arguments()
 
